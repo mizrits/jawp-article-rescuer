@@ -1,0 +1,26 @@
+name: Rescue
+
+on:
+  #schedule:
+  #  - cron: '0 21 * * *'
+  workflow_dispatch:
+
+jobs:
+  activation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+          architecture: 'x64'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Python
+        env:
+          ORIGIN_SERVER: ${{ secrets.ORIGIN_SERVER }}
+          DESTINATION_SERVER: ${{ secrets.DESTINATION_SERVER }}
+          BOT_NAME: ${{ secrets.BOT_NAME }}
+          BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
+        run: python rescue.py
