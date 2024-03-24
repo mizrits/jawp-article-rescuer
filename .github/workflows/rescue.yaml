@@ -19,8 +19,9 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run Python
         env:
-          ORIGIN_SERVER: ${{ secrets.ORIGIN_SERVER }}
-          DESTINATION_SERVER: ${{ secrets.DESTINATION_SERVER }}
+          ORIGIN_API: ${{ secrets.ORIGIN_API }}
+          ORIGIN_SCRIPT: ${{ secrets.ORIGIN_SCRIPT }}
+          DESTINATION_API: ${{ secrets.DESTINATION_API }}
           BOT_NAME: ${{ secrets.BOT_NAME }}
           BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
-        run: python rescue.py
+        run: python -m wprescue
