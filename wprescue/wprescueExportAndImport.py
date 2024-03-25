@@ -23,14 +23,13 @@ def importxmlandfix(title,fid: str):
     logintoken = S.get(url=DESTINATION_API, params={"action": "query","meta": "tokens","type": "login","format": "json"}).json()['query']['tokens']['logintoken']
     R = S.post(DESTINATION_API, data={"action":"login","lgname":BOT_NAME,"lgpassword":BOT_PASSWORD,"format":"json","lgtoken":logintoken})
     print(R)
-    #### import
     csrftoken = S.get(url=DESTINATION_API, params={"action": "query","meta": "tokens","format": "json"}).json()['query']['tokens']['csrftoken']
+    #### import
     summary=f"ボットによる自動インポート: ウィキペディア日本語版 https://ja.wikipedia.org/wiki/{title} から全版をインポートしました"
     file={'xml':(fid, open(os.path.abspath(fid)))} #with filepath
     R = S.post(url=DESTINATION_API, files=file, data={"action": "import","summary": summary,"format": "json","token": csrftoken,"interwikiprefix": "jawp"}).json()
     print(R)
     #### fix
-    csrftoken = S.get(url=DESTINATION_API, params={"action": "query","meta": "tokens","format": "json"}).json()['query']['tokens']['csrftoken']
     summary=f"ボットによる自動編集: インポート後の処理"
     url=f"{DESTINATION_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles={title}"
     source = requests.get(url).json()['query']['pages'][0]['revisions'][0]['slots']['main']['content']
