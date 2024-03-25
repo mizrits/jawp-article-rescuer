@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import wget
 import time
 import requests
 from dotenv import load_dotenv
