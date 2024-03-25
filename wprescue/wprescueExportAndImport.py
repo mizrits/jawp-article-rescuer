@@ -34,9 +34,8 @@ def importxmlandfix(title,fid: str):
     summary=f"ボットによる自動編集: インポート後の処理"
     url=f"{DESTINATION_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles={title}"
     source = requests.get(url).json()['query']['pages'][0]['revisions'][0]['slots']['main']['content']
-    re.sub('\<\!\-\-\s削除について[\s\S]*?(.*)しないでください。\s\-\-\>', '{{AutoImported}}', source)
-    file={'xml':(fid, open(os.path.abspath(fid)))} #with filepath
-    R = S.post(url=DESTINATION_API, files=file, data={"action": "import","summary": summary,"format": "json","token": csrftoken,"interwikiprefix": "jawp"}).json()
+    edited=re.sub('\<\!\-\-\s削除について[\s\S]*?(.*)しないでください。\s\-\-\>', '{{AutoImported|v1|app=v1|y={{subst:CURRENTYEAR}}|m={{subst:CURRENTMONTH}}|d={{subst:CURRENTDAY2}}}}', source)
+    R = S.post(url=DESTINATION_API, data={"action": "edit","summary": summary,"format": "json","token": csrftoken,"text": edited}).json()
     print(R)
 
 def ExportAndImport(title):
