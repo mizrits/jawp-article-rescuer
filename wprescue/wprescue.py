@@ -3,6 +3,7 @@ import re
 import datetime
 import requests
 from dotenv import load_dotenv
+import urllib.parse
 #from requests.exceptions import RequestException
 from .wprescueExportAndImport import ExportAndImport
 
@@ -10,12 +11,14 @@ load_dotenv(".env")
 ORIGIN_API = os.environ["ORIGIN_API"]
 
 def purge(page: str):
-    url=f"{ORIGIN_API}?action=purge&format=json&formatversion=2&titles={page}"
+    pagee=urllib.parse.quote(page)
+    url=f"{ORIGIN_API}?action=purge&format=json&formatversion=2&titles={pagee}"
     r = requests.post(url).json()
     return r
 
 def getsource(page: str):
-    url=f"{ORIGIN_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles={page}"
+    pagee=urllib.parse.quote(page)
+    url=f"{ORIGIN_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles={pagee}"
     r = requests.get(url).json()['query']['pages'][0]['revisions'][0]['slots']['main']['content']
     return r
 
