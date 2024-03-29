@@ -116,10 +116,13 @@ def main():
     articles=list(set(articlesbyid+articlesbyname))
     print(logging(f"重複を除き、合計 {len(articles)}本 の記事を確認しました: {articles}"))
 
-    for i in articles:
-        print(logging(f"{i} をエクスポート・インポートしています…"))
-        ExportAndImport(i)
-        print(logging(f"{i} の移入が完了しました"))
+    if articles:
+        for i in articles:
+            print(logging(f"{i} をエクスポート・インポートしています…"))
+            ExportAndImport(i)
+            print(logging(f"{i} の移入が完了しました"))
+    else:
+        print(logging(f"救出できる記事がないため、処理を終了します"))
 
     end = time.perf_counter()
     print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}秒"))
