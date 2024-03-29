@@ -59,7 +59,7 @@ def main():
     purge(afd)
     afdsource=getsource(afd)
 
-    print(logging(f"{afd} を読み込みました"))
+    print(logging(f"[[jawp:{afd}]] を読み込みました"))
     afdrequests = re.findall(r'\{\{(Wikipedia.*?)\}\}', afdsource)
     print(logging(f"{len(afdrequests)}件 の削除依頼が提出されています"))
 
@@ -122,7 +122,7 @@ def main():
         print(logging(f"{i} の移入が完了しました"))
 
     end = time.perf_counter()
-    print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}"))
+    print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}秒"))
     savelog(log)
 
 
