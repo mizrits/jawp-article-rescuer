@@ -54,3 +54,6 @@ def ExportAndImport(title: str, altname: str = ""):
     titlee = urllib.parse.quote(title) #encode
     exportxml(titlee=titlee,fid=fid)
     importxmlandedit(title=title,titlee=titlee,altname=altname,fid=fid)
+
+if __name__ == "__main__":
+    ExportAndImport(str(input("title")))
