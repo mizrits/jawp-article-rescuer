@@ -46,9 +46,9 @@ def getsource(page: str):
     r = requests.get(url).json()['query']['pages'][0]['revisions'][0]['slots']['main']['content']
     return r
 
-def getinfo(list: list, type: str):
+def getinfo(list: list, type: str, api: str = ORIGIN_API):
     input = urllib.parse.quote('|'.join(list))
-    url=f"{ORIGIN_API}?action=query&format=json&prop=info&formatversion=2&{type}={input}"
+    url=f"{api}?action=query&format=json&prop=info&formatversion=2&{type}={input}"
     r = requests.get(url).json()['query']['pages']
     return r
 
@@ -85,15 +85,15 @@ def main():
         print(logging(f"ページIDの解析: IDから存在している標準名前空間のページを探しています…"))
         info=getinfo(list=articleids, type="pageids")
         for i in range(0,len(articleids)):
-            title=info[i]['title']
             try:
+                title=info[i]['title']
                 if info[i]['ns'] == 0:
                     print(logging(f"◆「{title}」…OK"))
                     articlesbyid+=[title]
                 else:
                     print(logging(f"◆「{title}」…名前空間が異なるため除外"))
             except KeyError:
-                print(logging(f"◆「{title}」…既にページが存在しません"))
+                print(logging(f"◆ページID #{info[i]['pageid']} …既にページが存在しません"))
         print(logging(f"{len(articlesbyid)}本 見つかりました"))
 
     articlesbyname=[]
