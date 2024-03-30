@@ -117,15 +117,36 @@ def main():
     print(logging(f"重複を除き、合計 {len(articles)}本 の記事を確認しました: {articles}"))
 
     if articles:
-        for i in articles:
-            print(logging(f"{i} をエクスポート・インポートしています…"))
-            ExportAndImport(i)
-            print(logging(f"{i} の移入が完了しました"))
+        articlesbutalreadyimported=[]
+        altnamelist=[]
+        print(logging("既にインポートされているか確認します"))
+        info=getinfo(api=DESTINATION_API, list=articles, type="titles")
+        for i in range(0,len(articles)):
+            title=info[i]['title']
+            try:
+                nonexistence=info[i]['missing']
+                print(logging(f"◆「{title}」…過去のインポートはありません。そのまま処理します"))  
+            except KeyError:
+                altname=f"{title}/{datetime.datetime.now(jst).strftime('%Y%m%d')}"
+                print(logging(f"◆「{title}」…既にページが存在します。代替名「{altname}」としてインポートします"))
+                articles.remove(title)
+                articlesbutalreadyimported+=[title]
+                altnamelist+=[altname]
+        print(logging(f"{len(articles)}本 を通常インポート、 {len(articlesbutalreadyimported)}本 を代替名を設定してインポートします"))
+        if articles:
+            for i in articles:
+                print(logging(f"{i} をエクスポート・インポートしています…"))
+                ExportAndImport(i)
+                print(logging(f"{i} の移入が完了しました"))
+        if articlesbutalreadyimported:
+            for i in range(0,len(articlesbutalreadyimported)):
+                print(logging(f"{articlesbutalreadyimported[i]} をエクスポート・「{altnamelist[i]}」としてインポートしています…"))
+                ExportAndImport(title=articlesbutalreadyimported[i],altname=altnamelist[i])
+                print(logging(f"{articlesbutalreadyimported[i]} の移入が完了しました"))
     else:
         print(logging(f"救出できる記事がないため、処理を終了します"))
-
     end = time.perf_counter()
-    print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}秒"))
+    print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}秒\n"))
     savelog(log)
 
 
