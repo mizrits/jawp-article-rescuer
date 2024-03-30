@@ -15,7 +15,7 @@ BOT_NAME = os.environ["BOT_NAME"]
 BOT_PASSWORD = os.environ["BOT_PASSWORD"]
 
 jst = datetime.timezone(datetime.timedelta(hours=9),'JST')
-log="== ~~~~~ ==\n"
+log="\n== ~~~~~ ==\n"
 
 def logging(msg):
     global log
