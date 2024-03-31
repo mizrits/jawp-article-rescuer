@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import urllib.parse
 #from requests.exceptions import RequestException
 from .wprescueExportAndImport import ExportAndImport
+import argparse
 
 load_dotenv(".env")
 ORIGIN_API = os.environ["ORIGIN_API"]
@@ -53,9 +54,12 @@ def getinfo(list: list, type: str, api: str = ORIGIN_API):
     return r
 
 def main():
+    defaultafd=datetime.datetime.now().strftime('%Y年%-m月%-d日')
+    parser = argparse.ArgumentParser(description='jawp-article-rescuer')
+    parser.add_argument('--afd', default=defaultafd, help='Y年m月d日')  
+    args = parser.parse_args()
+    afd=f"Wikipedia:削除依頼/ログ/{args.afd}"
     start = time.perf_counter()
-    afd=datetime.datetime.now().strftime('Wikipedia:削除依頼/ログ/%Y年%-m月%-d日')
-    #afd='Wikipedia:削除依頼/ログ/2024年3月23日' #for developing on windows
     purge(afd)
     afdsource=getsource(afd)
 
