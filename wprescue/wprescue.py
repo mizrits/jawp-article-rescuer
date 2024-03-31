@@ -61,90 +61,94 @@ def main():
 
     print(logging(f"[[jawp:{afd}]] を読み込みました"))
     afdrequests = re.findall(r'\{\{(Wikipedia.*?)\}\}', afdsource)
-    print(logging(f"{len(afdrequests)}件 の削除依頼が提出されています"))
 
-    print(logging(f"特記号付きの依頼を除外しています"))
-    afdrequestsforurl = '|'.join(afdrequests)
-    url=f"{ORIGIN_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles="+afdrequestsforurl
-    r = requests.get(url).json()['query']['pages']
-    articlenames=[]
-    articleids=[]
-    markedrequests=0
-    for i in range(0,len(afdrequests)):
-        content=r[i]['revisions'][0]['slots']['main']['content']
-        if not re.match(r'===\s*(\([緊特\*]{1,3}\).*?)\s*===',content):
-            articlenames+=re.findall(r'\{\{Page\|(.*?)\}\}',content)
-            articleids+=re.findall(r'\{\{Page\/ID\|(.*?)\}\}',content)
-        else:
-            markedrequests+=1
-    print(logging(f"特記号付きの依頼 {markedrequests}件 は除外されました。"))
-    print(logging(f"残りの {len(afdrequests)-markedrequests}件 の依頼から、 {len(articlenames)}本 のページ名、 {len(articleids)}本 のページIDが見つかりました"))
-
-    articlesbyid=[]
-    if articleids:
-        print(logging(f"ページIDの解析: IDから存在している標準名前空間のページを探しています…"))
-        info=getinfo(list=articleids, type="pageids")
-        for i in range(0,len(articleids)):
-            try:
+    if afdrequests: #もし削除依頼があったら
+        print(logging(f"{len(afdrequests)}件 の削除依頼が提出されています"))
+        print(logging(f"特記号付きの依頼を除外しています"))
+        afdrequestsforurl = '|'.join(afdrequests)
+        url=f"{ORIGIN_API}?action=query&format=json&prop=revisions&formatversion=2&rvprop=content&rvslots=main&titles="+afdrequestsforurl
+        r = requests.get(url).json()['query']['pages']
+        articlenames=[]
+        articleids=[]
+        markedrequests=0
+        for i in range(0,len(afdrequests)):
+            content=r[i]['revisions'][0]['slots']['main']['content']
+            if not re.match(r'===\s*(\([緊特\*]{1,3}\).*?)\s*===',content): ##もし特記号がなかったら
+                articleids+=re.findall(r'\{\{Page\/ID\|(.*?)\}\}',content)
+                articlenames+=re.findall(r'\{\{Page\|(.*?)\}\}',content)
+            else: ##もし特記号があったら
+                markedrequests+=1
+        print(logging(f"特記号付きの依頼 {markedrequests}件 は除外されました。"))
+        print(logging(f"残りの {len(afdrequests)-markedrequests}件 の依頼から、 {len(articlenames)}本 のページ名、 {len(articleids)}本 のページIDが見つかりました"))
+  
+        articlesbyid=[]
+        if articleids: ##もし特記号のない、IDでの依頼があったら
+            print(logging(f"ページIDの解析: IDから存在している標準名前空間のページを探しています…"))
+            info=getinfo(list=articleids, type="pageids")
+            for i in range(0,len(articleids)):
+                try:
+                    title=info[i]['title']
+                    if info[i]['ns'] == 0:
+                        print(logging(f"◆「{title}」…OK"))
+                        articlesbyid+=[title]
+                    else:
+                        print(logging(f"◆「{title}」…名前空間が異なるため除外"))
+                except KeyError:
+                    print(logging(f"◆ページID #{info[i]['pageid']} …既にページが存在しません"))
+            print(logging(f"{len(articlesbyid)}本 見つかりました"))
+    
+        articlesbyname=[]
+        if articlenames: ##もし特記号のない通常依頼があったら
+            print(logging(f"ページ名の解析: 存在している標準名前空間のページを探しています"))
+            info=getinfo(list=articlenames, type="titles")
+            for i in range(0,len(articlenames)):
                 title=info[i]['title']
-                if info[i]['ns'] == 0:
-                    print(logging(f"◆「{title}」…OK"))
-                    articlesbyid+=[title]
-                else:
-                    print(logging(f"◆「{title}」…名前空間が異なるため除外"))
-            except KeyError:
-                print(logging(f"◆ページID #{info[i]['pageid']} …既にページが存在しません"))
-        print(logging(f"{len(articlesbyid)}本 見つかりました"))
+                try:
+                    existence=info[i]['length']
+                    if info[i]['ns'] == 0:
+                        print(logging(f"◆「{title}」…OK"))
+                        articlesbyname+=[title]
+                    else:
+                        print(logging(f"◆「{title}」…名前空間が異なるため除外"))
+                except KeyError:
+                    print(logging(f"◆「{title}」…既にページが存在しません"))
+            print(logging(f"{len(articlesbyname)}本 見つかりました"))
+    
+        articles=list(set(articlesbyid+articlesbyname))
+        print(logging(f"(重複を除き、)合計 {len(articles)}本 の記事を確認しました: {articles}"))
+  
+        if articles: ##もし記事リストがあったら
+            articlesbutalreadyimported=[]
+            altnamelist=[]
+            print(logging("既にインポートされているか確認します"))
+            info=getinfo(api=DESTINATION_API, list=articles, type="titles")
+            for i in range(0,len(articles)):
+                title=info[i]['title']
+                try:
+                    nonexistence=info[i]['missing']
+                    print(logging(f"◆「{title}」…過去のインポートはありません。そのまま処理します"))  
+                except KeyError:
+                    altname=f"{title}/{datetime.datetime.now(jst).strftime('%Y%m%d')}"
+                    print(logging(f"◆「{title}」…既にページが存在します。代替名「{altname}」としてインポートします"))
+                    articles.remove(title)
+                    articlesbutalreadyimported+=[title]
+                    altnamelist+=[altname]
+            print(logging(f"{len(articles)}本 を通常インポート、 {len(articlesbutalreadyimported)}本 を代替名を設定してインポートします"))
+            if articles: ###もし通常インポート対象があったら
+                for i in articles:
+                    print(logging(f"{i} をエクスポート・インポートしています…"))
+                    ExportAndImport(i)
+                    print(logging(f"{i} の移入が完了しました"))
+            if articlesbutalreadyimported: ###もし代替名インポート対象があったら
+                for i in range(0,len(articlesbutalreadyimported)):
+                    print(logging(f"{articlesbutalreadyimported[i]} をエクスポート・「{altnamelist[i]}」としてインポートしています…"))
+                    ExportAndImport(title=articlesbutalreadyimported[i],altname=altnamelist[i])
+                    print(logging(f"{articlesbutalreadyimported[i]} の移入が完了しました"))
+        else: ##もし記事リストがなかったら
+            print(logging(f"救出できる記事がないため、処理を終了します"))    
+    else: #もし削除依頼がなかったら
+        print(logging(f"削除依頼が提出されていません。処理を終了します"))
 
-    articlesbyname=[]
-    if articlenames:
-        print(logging(f"ページ名の解析: 存在している標準名前空間のページを探しています"))
-        info=getinfo(list=articlenames, type="titles")
-        for i in range(0,len(articlenames)):
-            title=info[i]['title']
-            try:
-                existence=info[i]['length']
-                if info[i]['ns'] == 0:
-                    print(logging(f"◆「{title}」…OK"))
-                    articlesbyname+=[title]
-                else:
-                    print(logging(f"◆「{title}」…名前空間が異なるため除外"))
-            except KeyError:
-                print(logging(f"◆「{title}」…既にページが存在しません"))
-        print(logging(f"{len(articlesbyname)}本 見つかりました"))
-
-    articles=list(set(articlesbyid+articlesbyname))
-    print(logging(f"重複を除き、合計 {len(articles)}本 の記事を確認しました: {articles}"))
-
-    if articles:
-        articlesbutalreadyimported=[]
-        altnamelist=[]
-        print(logging("既にインポートされているか確認します"))
-        info=getinfo(api=DESTINATION_API, list=articles, type="titles")
-        for i in range(0,len(articles)):
-            title=info[i]['title']
-            try:
-                nonexistence=info[i]['missing']
-                print(logging(f"◆「{title}」…過去のインポートはありません。そのまま処理します"))  
-            except KeyError:
-                altname=f"{title}/{datetime.datetime.now(jst).strftime('%Y%m%d')}"
-                print(logging(f"◆「{title}」…既にページが存在します。代替名「{altname}」としてインポートします"))
-                articles.remove(title)
-                articlesbutalreadyimported+=[title]
-                altnamelist+=[altname]
-        print(logging(f"{len(articles)}本 を通常インポート、 {len(articlesbutalreadyimported)}本 を代替名を設定してインポートします"))
-        if articles:
-            for i in articles:
-                print(logging(f"{i} をエクスポート・インポートしています…"))
-                ExportAndImport(i)
-                print(logging(f"{i} の移入が完了しました"))
-        if articlesbutalreadyimported:
-            for i in range(0,len(articlesbutalreadyimported)):
-                print(logging(f"{articlesbutalreadyimported[i]} をエクスポート・「{altnamelist[i]}」としてインポートしています…"))
-                ExportAndImport(title=articlesbutalreadyimported[i],altname=altnamelist[i])
-                print(logging(f"{articlesbutalreadyimported[i]} の移入が完了しました"))
-    else:
-        print(logging(f"救出できる記事がないため、処理を終了します"))
     end = time.perf_counter()
     print(logging(f"全ての処理を完了しました。経過時間:{end-start:.4f}秒\n"))
     savelog(log)
